@@ -6,6 +6,8 @@ import {
     createPromiseThunkById,
     handleAsyncActionById
 } from '../lib/asyncUtils';
+import {call, put, takeEvery} from 'redux-saga/effects';
+
 
 /*Action Type*/
 const GET_POSTS = 'GET_POSTS';
@@ -19,12 +21,62 @@ const GET_POST_ERROR = 'GET_POST_ERROR';
 
 // const CLEAR_POST = 'CLEAR_POST';
 
+// /*Thunk*/
+// export const getPosts = createPromiseThunk(GET_POSTS, postsAPI.getPosts);
+// // export const getPost = createPromiseThunk(GET_POST, postsAPI.getPostById);
+// export const getPost = createPromiseThunkById(GET_POST, postsAPI.getPostById)
+// // export const clearPost = () => ({type: CLEAR_POST});
+// export const goToHome = () => (dispatch, getState, {history}) => {
+//     history.push('/');
+// };
+
+export const getPosts = () => ({ type: GET_POSTS });
+export const getPost = id => ({ type: GET_POST, payload: id, meta: id });
+
+
+/*Saga*/
+function* getPostsSaga() {
+    try {
+        const posts = yield call(postsAPI.getPosts); // call 을 사용하면 특정 함수를 호출하고, 결과물이 반환 될 때까지 기다려줄 수 있습니다.
+        yield put({
+            type: GET_POSTS_SUCCESS,
+            payload: posts
+        });
+    } catch (e) {
+        yield put({
+            type: GET_POSTS_ERROR,
+            error: true,
+            payload: e
+        });
+    }
+}
+function* getPostSaga(action){
+    const param = action.payload;
+    const id = action.meta;
+    try {
+        const post = yield call(postsAPI.getPostById, param);
+        yield put({
+            type: GET_POST_SUCCESS,
+            payload: post,
+            meta: id
+        });
+    } catch (e) {
+        yield put({
+            type: GET_POST_ERROR,
+            error: true,
+            payload: e,
+            meta: id
+        });
+    }
+};
+export function* postsSaga () {
+    yield takeEvery(GET_POSTS, getPostsSaga);
+    yield takeEvery(GET_POST,getPostSaga);
+}
+
+
 /*Thunk*/
-export const getPosts = createPromiseThunk(GET_POSTS, postsAPI.getPosts);
-// export const getPost = createPromiseThunk(GET_POST, postsAPI.getPostById);
-export const getPost = createPromiseThunkById(GET_POST, postsAPI.getPostById)
-// export const clearPost = () => ({type: CLEAR_POST});
-export const goToHome = () => (dispatch, getState, {history}) => {
+export const goToHome = () => (dispatch, getState, { history }) => {
     history.push('/');
 };
 
